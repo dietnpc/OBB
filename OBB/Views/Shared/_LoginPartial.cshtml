@@ -1,0 +1,43 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@{
+    TwitterView tw = (TwitterView)ViewData["TwitterView"];
+}
+    <div class="navbar-nav">
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <div class="dropdown pmd-dropdown pmd-user-info ml-auto">
+                <a href="javascript:void(0);" class="btn btn-light text-dark btn-user dropdown-toggle media align-items-center" data-toggle="dropdown" data-sidebar="true" aria-expanded="false">
+                    @if (!string.IsNullOrEmpty(tw?.ProfileImgB64))
+                    {
+                        <img class="mr-2" src="data:image/png;base64, @tw.ProfileImgB64" width="40" height="40" alt="ProfileImage">
+                    }
+                    <div class="media-body">
+                        @(
+                            string.IsNullOrEmpty(tw?.ScreenName)
+                                                ? User.Identity.Name
+                                                : "@"+tw.ScreenName
+                        )
+                    </div>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" role="menu">                    
+                    <form style="padding:0px !important;" class="dropdown-item form-inline" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
+                        <button type="submit" class="nav-link btn btn-light text-dark" style="width:100% !important;">Edit Profile</button>
+                    </form>
+                    <form style="padding:0px !important;" class="dropdown-item form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                        <button type="submit" class="nav-link btn btn-light text-dark" style="width:100% !important;">Logout</button>
+                    </form>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="nav-item">
+                <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">Login</a>
+            </div>
+        }
+    </div>

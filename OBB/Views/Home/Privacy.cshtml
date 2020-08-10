@@ -1,0 +1,10 @@
+﻿@{
+    ViewData["Title"] = "Privacy Policy";
+}
+<h1>@ViewData["Title"]</h1>
+
+<p>The only data stored by this application is oauth keys and/or accounts if you setup a username and password.  All of this data can be deleted by accessing your account and deleting the data.  This also deletes your account with this application.  It does not delete your Twitter account.  From the account page, you can also access/view the data associated to you, so you know what is stored.  The rest of the data is only gathered through the Twitter API and displayed in the application.</p>
+<p>The site offers a backup of your twitter follower/following data.  This file is not stored on the servers or with the application.  Instead, it is made availabe to be downloaded by you where you can and are responsible for storing safely on your own.  When you import the file, the file is not saved, but only analyzed against the Twitter API to compare the results of your followers at 2 points in time.</p>
+<p>All credential management regarding Twitter authentication is through oauth tokens and managed with Twitter for your account.  The application uses the access tokens, from your authentication with Twitter, to make Twitter API calls to gather the information displayed on the screen.  The information gathered is not stored on the servers, and is only cached at runtime with your authenticated session during using the application to save on data throughput to make the application run quicker and to limit then number of used API calls during each page load/reload.</p>
+<p>The application is setup from a developer application account which uses a consumer/app token information in order to gain access to the Twitter API.  Otherwise, none of this would be securely possible and against Twitter terms and service.</p>
+<p>Feel free to use this application freely and make modifications from the source code repository, but you will need to use your own developer application account for access to the Twitter API.</p>

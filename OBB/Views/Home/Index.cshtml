@@ -1,0 +1,333 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using OBB.Services
+@using Tweetinvi.Models
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@inject ITwitterService TS
+@{
+    ViewData["Title"] = "Home Page";
+    TwitterView tw = (TwitterView)ViewData["TwitterView"];
+    var newFollowers = new List<IUser>();
+    var lostFollowers = new List<IUser>();
+    var sameFollowers = new List<IUser>();
+    var newFollowings = new List<IUser>();
+    var lostFollowings = new List<IUser>();
+    var sameFollowings = new List<IUser>();
+    if (tw.NewFollowerIds.Count > 0) { newFollowers = TS.GetUsers(tw.NewFollowerIds, UserTypes.NewFollowers); }
+    if (tw.LostFollowerIds.Count > 0) { lostFollowers = TS.GetUsers(tw.LostFollowerIds, UserTypes.LostFollowers); }
+    if (tw.SameFollowerIds.Count > 0) { sameFollowers = TS.GetUsers(tw.SameFollowerIds, UserTypes.SameFollowers); }
+    if (tw.NewFollowingIds.Count > 0) { newFollowings = TS.GetUsers(tw.NewFollowingIds, UserTypes.NewFollowing); }
+    if (tw.LostFollowingIds.Count > 0) { lostFollowings = TS.GetUsers(tw.LostFollowingIds, UserTypes.LostFollowing); }
+    if (tw.SameFollowingIds.Count > 0) { sameFollowings = TS.GetUsers(tw.SameFollowingIds, UserTypes.SameFollowing); }
+}
+@if (SignInManager.IsSignedIn(User) && tw != null)
+{
+    <div class="container text-center alert alert-success">
+        <div class="row">
+            <div class="col-6">You have @tw.FollowerIds.Count() followers</div>
+            <div class="col-6">You are following @tw.FollowingIds.Count() accounts.</div>
+        </div>
+    </div>
+    <div class="container-fluid alert alert-dark">
+        <div class="row align-items-center">
+            <div class="col-md-6 text-center form-group">
+                <a class="btn btn-primary btn-block" asp-area="" asp-controller="Home" asp-action="Save">Backup Data</a>
+            </div>
+            <form class="col-md-6" method="post" enctype="multipart/form-data" asp-area="" asp-controller="Home" asp-action="Import">
+                <div class="custom-file">
+                    <input type="file" class="custom-file-input" id="file" name="file">
+                    <label class="custom-file-label" for="customFile">Upload your backup file:</label>
+                </div>                
+                <div class="form-group">
+                    <input class="btn btn-dark btn-block" type="submit" value="Import" />
+                </div>
+            </form>
+        </div>
+        <div class="row align-items-top">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="input-group">
+                        <select class="custom-select" id="twitterFollowGroup" aria-label="Choose Group">
+                            <option value="1">New Followers</option>
+                            <option value="2">Lost Followers</option>
+                            <option value="3">Same Followers</option>
+                            <option value="4">New Following</option>
+                            <option value="5">Lost Following</option>
+                            <option value="6">Same Following</option>
+                        </select>
+                        <div style="cursor:pointer;" class="input-group-append">
+                            <div style="cursor:pointer;" class="btn btn-outline-dark" onclick="ToggleAll()">Toggle All</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group text-center">
+                    <div style="cursor:pointer;" class="btn btn-outline-dark btn-block" onclick="RefollowLostFollowing()">Follow Selected Lost Following</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="messageText">Message for Selected</label>
+                    <textarea class="form-control" id="messageText" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <div class="input-group">
+                        <select class="custom-select" id="twitterFollowGroup_MessageSelected" aria-label="Choose Group">
+                            <option value="1">New Followers</option>
+                            <option value="2">Lost Followers</option>
+                            <option value="3">Same Followers</option>
+                            <option value="4">New Following</option>
+                            <option value="5">Lost Following</option>
+                            <option value="6">Same Following</option>
+                        </select>
+                        <div class="input-group-append">
+                            <div style="cursor:pointer;" class="btn btn-outline-dark" onclick="MessageSelected()">Send Message</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <nav>
+        <div class="nav nav-pills alert alert-primary" id="nav-tab" role="tablist">
+            <a class="nav-item nav-link active" id="nav-newfollow-tab" data-toggle="tab" href="#nav-newfollow" role="tab" aria-controls="nav-newfollow" aria-selected="true">
+                New Followers <div class="badge badge-dark">@tw.NewFollowerIds.Count</div>
+            </a>
+            <a class="nav-item nav-link" id="nav-lostfollow-tab" data-toggle="tab" href="#nav-lostfollow" role="tab" aria-controls="nav-lostfollow" aria-selected="false">
+                Lost Followers <div class="badge badge-dark">@tw.LostFollowerIds.Count</div>
+            </a>
+            <a class="nav-item nav-link" id="nav-samefollow-tab" data-toggle="tab" href="#nav-samefollow" role="tab" aria-controls="nav-samefollow" aria-selected="false">
+                Same Followers <div class="badge badge-dark">@tw.SameFollowerIds.Count</div>
+            </a>
+
+
+            <a class="nav-item nav-link" id="nav-newfollowing-tab" data-toggle="tab" href="#nav-newfollowing" role="tab" aria-controls="nav-newfollowing" aria-selected="false">
+                New Following <div class="badge badge-dark">@tw.NewFollowingIds.Count</div>
+            </a>
+            <a class="nav-item nav-link" id="nav-lostfollowing-tab" data-toggle="tab" href="#nav-lostfollowing" role="tab" aria-controls="nav-lostfollowing" aria-selected="false">
+                Lost Following <div class="badge badge-dark">@tw.LostFollowingIds.Count</div>
+            </a>
+            <a class="nav-item nav-link" id="nav-samefollowing-tab" data-toggle="tab" href="#nav-samefollowing" role="tab" aria-controls="nav-samefollowing" aria-selected="false">
+                Same Following <div class="badge badge-dark">@tw.SameFollowingIds.Count</div>
+            </a>
+        </div>
+    </nav>
+    <div class="tab-content" id="nav-tabContent">
+        <div class="tab-pane fade show active" id="nav-newfollow" role="tabpanel" aria-labelledby="nav-newfollow-tab">
+            <div class="card-columns">
+                @foreach (var user in newFollowers)
+                {
+                    <div class="btn-group-toggle" data-toggle="buttons">
+                        <div class="card btn btn-secondary btn-outline-secondary active" style="width: 18rem;">
+                            <img class="card-img-top" src="@user.ProfileBannerURL" alt="User Banner">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <img src="@user.ProfileImageUrl" />
+                                    @user.ScreenName
+                                </h5>
+                                <p class="card-text">@user.Description</p>
+                                <input type="checkbox" value="@user.Id" checked autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="tab-pane fade" id="nav-lostfollow" role="tabpanel" aria-labelledby="nav-lostfollow-tab">
+            <div class="card-columns">
+                @foreach (var user in lostFollowers)
+                {
+                    <div class="btn-group-toggle" data-toggle="buttons">
+                        <div class="card btn btn-secondary btn-outline-secondary active" style="width: 18rem;">
+                            <img class="card-img-top" src="@user.ProfileBannerURL" alt="User Banner">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <img src="@user.ProfileImageUrl" />
+                                    @user.ScreenName
+                                </h5>
+                                <p class="card-text">@user.Description</p>
+                                <input type="checkbox" value="@user.Id" checked autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="tab-pane fade" id="nav-samefollow" role="tabpanel" aria-labelledby="nav-samefollow-tab">
+            <div class="card-columns">
+                @foreach (var user in sameFollowers)
+                {
+                    <div class="btn-group-toggle" data-toggle="buttons">
+                        <div class="card btn btn-secondary btn-outline-secondary" style="width: 18rem;">
+                            <img class="card-img-top" src="@user.ProfileBannerURL" alt="User Banner">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <img src="@user.ProfileImageUrl" />
+                                    @user.ScreenName
+                                </h5>
+                                <p class="card-text">@user.Description</p>
+                                <input type="checkbox" value="@user.Id" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+
+        <div class="tab-pane fade" id="nav-newfollowing" role="tabpanel" aria-labelledby="nav-newfollowing-tab">
+            <div class="card-columns">
+                @foreach (var user in newFollowings)
+                {
+                    <div class="btn-group-toggle" data-toggle="buttons">
+                        <div class="card btn btn-secondary btn-outline-secondary active" style="width: 18rem;">
+                            <img class="card-img-top" src="@user.ProfileBannerURL" alt="User Banner">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <img src="@user.ProfileImageUrl" />
+                                    @user.ScreenName
+                                </h5>
+                                <p class="card-text">@user.Description</p>
+                                <input type="checkbox" value="@user.Id" checked autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="tab-pane fade" id="nav-lostfollowing" role="tabpanel" aria-labelledby="nav-lostfollowing-tab">
+            <div class="card-columns">
+                @foreach (var user in lostFollowings)
+                {
+                    <div class="btn-group-toggle" data-toggle="buttons">
+                        <div class="card btn btn-secondary btn-outline-secondary active" style="width: 18rem;">
+                            <img class="card-img-top" src="@user.ProfileBannerURL" alt="User Banner">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <img src="@user.ProfileImageUrl" />
+                                    @user.ScreenName
+                                </h5>
+                                <p class="card-text">@user.Description</p>
+                                <input type="checkbox" value="@user.Id" checked autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="tab-pane fade" id="nav-samefollowing" role="tabpanel" aria-labelledby="nav-samefollowing-tab">
+            <div class="card-columns">
+                @foreach (var user in sameFollowings)
+                {
+                    <div class="btn-group-toggle" data-toggle="buttons">
+                        <div class="card btn btn-secondary btn-outline-secondary" style="width: 18rem;">
+                            <img class="card-img-top" src="@user.ProfileBannerURL" alt="User Banner">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <img src="@user.ProfileImageUrl" />
+                                    @user.ScreenName
+                                </h5>
+                                <p class="card-text">@user.Description</p>
+                                <input type="checkbox" value="@user.Id" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="text-center">
+        <h1 class="display-4">Welcome</h1>
+        <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    </div>
+}
+<script>
+    function ToggleAll() {
+        var group = $("#twitterFollowGroup").val();
+        switch (group) {
+            case "1":
+                $("#nav-newfollow .card.btn").button('toggle')
+                break;
+            case "2":
+                $("#nav-lostfollow .card.btn").button('toggle')
+                break;
+            case "3":
+                $("#nav-samefollow .card.btn").button('toggle')
+                break;
+            case "4":
+                $("#nav-newfollowing .card.btn").button('toggle')
+                break;
+            case "5":
+                $("#nav-lostfollowing .card.btn").button('toggle')
+                break;
+            case "6":
+                $("#nav-samefollowing .card.btn").button('toggle')
+                break;
+        }
+    }
+    function MessageSelected() {
+        var group = $("#twitterFollowGroup_MessageSelected").val();
+        var message = $("#messageText").val();
+        var checkedIds = null;
+        switch (group) {
+            case "1":
+                checkedIds = GetSelectedVals("#nav-newfollow .card input:checked");
+                break;
+            case "2":
+                checkedIds = GetSelectedVals("#nav-lostfollow .card input:checked");
+                break;
+            case "3":
+                checkedIds = GetSelectedVals("#nav-samefollow .card input:checked");
+                break;
+            case "4":
+                checkedIds = GetSelectedVals("#nav-newfollowing .card input:checked");
+                break;
+            case "5":
+                checkedIds = GetSelectedVals("#nav-lostfollowing .card input:checked");
+                break;
+            case "6":
+                checkedIds = GetSelectedVals("#nav-samefollowing .card input:checked");
+                break;
+        }
+        $.ajax({
+               url: '@Url.Action("SendMessage", "Home")',
+               type: 'POST',
+               dataType: 'json',
+            data: { UserIds: checkedIds, Message: message },
+               cache: false,
+               success: function (Data) {
+                   if (Data.ok) {
+                       //var link = "@Url.Action("Index", "Home")";
+                   }
+               }
+           });
+    }
+    function GetSelectedVals(jquerySelector) {
+        var checkVals = [];
+        $.each($(jquerySelector), function () { checkVals.push($(this).val()); });
+        //return checkVals.join(",");
+        return checkVals;
+    }
+    function RefollowLostFollowing() {
+        var lostFollowing = checkedIds = GetSelectedVals("#nav-lostfollowing .card input:checked");
+        $.ajax({
+               url: '@Url.Action("Refollow", "Home")',
+               type: 'POST',
+               dataType: 'json',
+            data: { UserIds: lostFollowing },
+               cache: false,
+               success: function (Data) {
+                   if (Data.ok) {
+                      //redirect current page to new view products->action method, jquery->controller.
+                       var link = "@Url.Action("Index", "Home")";
+                       //alert(link);
+                       alert("Refollowing has finished!");
+                       window.location.href = link;
+                   }
+               }
+           });
+    }
+</script>
